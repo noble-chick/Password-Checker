@@ -1,51 +1,70 @@
 # Password-Checker
 
-A command-line tool that rates password strength as **WEAK / MEDIUM / STRONG / VERY STRONG**.
+A command-line password strength checker built to follow **NIST SP 800-63B** guidelines — the federal standard for password security.
 
-## What it checks
+## What makes this NIST-compliant?
 
-| Check | Details |
+Most password checkers get this wrong. NIST says:
+
+| Common myth | What NIST actually says |
 |---|---|
-| Common passwords | Flags top 30 most-used passwords instantly |
-| Keyboard patterns | Detects walks like `qwerty`, `123456` |
-| Length | Short (<8) penalised, 16+ rewarded |
-| Character variety | Lowercase, uppercase, digits, symbols |
-| Repeated characters | Penalises `aaa`, `111`, etc. |
+| Require uppercase + symbols + numbers | ❌ Don't enforce composition rules |
+| Complex short passwords are strong | ❌ Length matters far more than complexity |
+| `P@ssw0rd!` is a strong password | ❌ Predictable substitutions don't help |
+| `correct horse battery staple` is weak | ✅ It's extremely strong. 28 chars, unique |
 
-## How to run
+This checker follows those rules.
+
+## How it works
+
+**Gate 1 — Blocklist**
+Instantly rejects passwords found on the breached/common passwords list (e.g. `password`, `iloveyou`, `admin`). Real deployments should plug in the [HaveIBeenPwned](https://haveibeenpwned.com/Passwords) 500k+ password list.
+
+**Gate 2 — Minimum length**
+Rejects anything under 8 characters (NIST minimum).
+
+**Gate 3 — zxcvbn guessability estimate**
+Uses the [`zxcvbn`](https://github.com/dwolfhub/zxcvbn-python) library (originally built by Dropbox) to estimate how many guesses an attacker would need. Scores 0–4 with an estimated crack time.
+
+## Install & run
 
 ```bash
+pip install zxcvbn
 python password_checker.py
 ```
-
-No external libraries needed — pure Python standard library.
 
 ## Example output
 
 ```
-  Password : ***********
-  Length   : 11 characters
+  Password   : ••••••••••••••••••••••••••••
+  Length     : 28 characters
+  Strength   : ▓▓▓▓▓  VERY STRONG
+  Crack time : centuries  (213,811,968,952,000,000,000 guesses)
 
-  Score    : [████████████░░░░░░░░░░░░░░░░░░] 40/100
-  Rating   : MEDIUM
+  Suggestions:
+    → ✅ Great length — length is the strongest factor per NIST.
+```
 
-  What's good:
-    ✅ Decent length (8–11 chars)
-    ✅ Contains lowercase letters
-    ✅ Contains digits
+```
+  Password   : •••••••••
+  Length     : 9 characters
+  Strength   : ▓▓░░░  WEAK
+  Crack time : 1 second  (11,100 guesses)
 
-  What to improve:
-    ❌ Add uppercase letters (A–Z)
-    ❌ Add symbols like ! @ # $ % ^ & *
+  ⚠️  This is similar to a commonly used password.
+
+  Suggestions:
+    → NIST tip: a longer passphrase beats a complex short password.
+    → Predictable substitutions like '@' instead of 'a' don't help very much.
 ```
 
 ## Skills covered
 
-- String manipulation and regex (`re` module)
-- Functions and dictionaries
-- Control flow and scoring logic
-- Terminal colors with ANSI escape codes
-- Input validation and loops
+- NIST SP 800-63B security standards
+- Third-party library integration (`zxcvbn`)
+- Blocklist / denylist pattern
+- Entropy-based password scoring vs rule-based scoring
+- ANSI terminal colors and CLI design
 
 ## File structure
 
@@ -54,3 +73,9 @@ password-checker/
 ├── password_checker.py
 └── README.md
 ```
+
+## References
+
+- [NIST SP 800-63B](https://pages.nist.gov/800-63-3/sp800-63b.html)
+- [zxcvbn — realistic password strength estimation](https://github.com/dropbox/zxcvbn)
+- [HaveIBeenPwned password list](https://haveibeenpwned.com/Passwords)
